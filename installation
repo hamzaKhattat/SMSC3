@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Check if running as root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Please run this script as root"
+    exit 1
+fi
+
+# Update the package list
+yum update -y
+
+# Install development tools
+yum groupinstall -y 'Development Tools'
+
+# Install dependencies
+yum install -y wget openssl-devel libffi-devel zlib-devel
+
+# Download Python 3.9 source
+wget https://www.python.org/ftp/python/3.9.7/Python-3.9.7.tgz
+
+# Extract Python source
+tar -xf Python-3.9.7.tgz
+
+# Navigate into Python source directory
+cd Python-3.9.7
+
+# Configure Python installation
+./configure --enable-optimizations
+
+# Build and install Python
+make altinstall
+
+# Clean up downloaded files
+cd ..
+rm -rf Python-3.9.7*
+  
+# Verify Python3 installation
+python3.9 --version
+sudo rm -r /usr/bin/python3
+sudo ln -s /usr/local/bin/python3.9 /usr/bin/python3
+sudo yum install python3-pip -y
+
+pip3 install mysql-connector-python smpplib PySide2
+
+sudo pip3 install mysql-connector-python smpplib PySide2
+
+# Run sms_generator.py
+echo "Running sms_generator.py..."
+sudo python3.9 sms_generator.py

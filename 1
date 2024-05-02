@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Check if the script is running as root
+if [ "$(id -u)" -ne 0 ]; then
+  echo "This script must be run as root. Please use 'sudo' or run as the root user."
+  exit 1
+fi
+
+# Install GNOME desktop environment
+echo "Installing GNOME desktop environment..."
+yum -y groupinstall "GNOME Desktop"
+
+# Set the system to start in graphical mode
+echo "Setting GNOME to start on boot..."
+systemctl set-default graphical.target
+
+# Install xrdp and its dependencies
+echo "Installing xrdp..."
+yum -y install epel-release
+yum -y install xrdp
+
+# Start xrdp service
+echo "Starting xrdp service..."
+systemctl start xrdp
+systemctl enable xrdp
+
+# Configure the firewall to allow RDP traffic on port 3389
+echo "Configuring firewall to allow RDP traffic on port 3389..."
+firewall-cmd --permanent --add-port=3389/tcp
+firewall-cmd --reload
+
+# Secure xrdp (optional but recommended)
+# This sets a fixed RDP port, assigns users, and creates a strong password.
+echo "Configuring xrdp to listen on port 3389..."
+sed -i 's/3389/3389/' /etc/xrdp/xrdp.ini
+
+# Add a configuration entry for the 'root' user
+echo "Configuring xrdp for the 'root' user..."
+mkdir -p /etc/xrdp/
+cat >/etc/xrdp/startwm.sh <<EOL
+#!/bin/bash
+unset DBUS_SESSION_BUS_ADDRESS
+exec gnome-session
+EOL
+
+chmod +x /etc/xrdp/startwm.sh
+
+# Create a root password
+echo "Setting password for 'root' user..."
+echo 'root:Hamza12345678' | chpasswd
+
+# Restart xrdp to apply changes
+echo "Restarting xrdp service..."
+systemctl restart xrdp
+
+echo "Installation complete. You can now connect to this CentOS 7 machine using RDP."
+
